@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Журнал поездок</title>
+    <link rel="manifest" href="manifest.json?v=10">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎫</text></svg>">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <link rel="stylesheet" href="style.css?v=10">
+</head>
+<body>
+    <div id="app">
+        <div class="screen active">
+            <div class="header">
+                <h1>📋 Журнал</h1>
+                <div class="header-buttons">
+                    <button id="btn-theme" class="btn-theme">🌙</button>
+                    <a href="index.html" class="btn-link">← Назад</a>
+                </div>
+            </div>
+
+            <div class="section-title" id="journal-date"></div>
+
+            <button id="btn-undo" class="btn-undo-inline hidden">✖️ отменить последнюю поездку</button>
+
+            <div id="journal-empty" class="no-trips">Пока нет поездок</div>
+            <div id="journal-list" class="card hidden"></div>
+        </div>
+    </div>
+    <script src="journal.js?v=10"></script>
+</body>
+</html>

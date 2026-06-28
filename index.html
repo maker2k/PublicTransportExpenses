@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Проездной</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <link rel="manifest" href="manifest.json?v=10">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎫</text></svg>">
+    <link rel="stylesheet" href="style.css?v=10">
+</head>
+<body>
+    <div id="app">
+        <div class="screen active">
+            <div class="header">
+                <h1>🎫 Поездки</h1>
+                <div class="header-buttons">
+                    <button id="btn-theme" class="btn-theme">🌙</button>
+                    <a href="help.html" class="btn-link">Справка</a>
+                    <a href="pass.html" class="btn-link">Проездной</a>
+                    <a href="setup.html" class="btn-link">Настройки</a>
+                </div>
+            </div>
+
+            <div id="pass-card" class="card pass-card hidden">
+                <div id="pass-expired-banner" class="banner banner-warn hidden">Проездной истёк!</div>
+                <div id="pass-lost-banner" class="banner banner-lost hidden">Проездной потерян</div>
+                <div id="pass-info-text" class="pass-info-line"></div>
+                <div class="progress-bar">
+                    <div id="pass-progress-fill" class="progress-fill"></div>
+                </div>
+                <div id="pass-progress-text" class="pass-progress-text"></div>
+                <div id="pass-remaining" class="pass-remaining"></div>
+            </div>
+
+            <div class="card">
+                <a href="journal.html" class="today-link">
+                    <span>Сегодня: <strong id="today-trips">0</strong> поездок</span>
+                    <span class="today-expenses-wrap"><strong id="today-expenses">0.00 BYN</strong> ›</span>
+                </a>
+                <div id="trips-buttons" class="trips-buttons"></div>
+                <div class="trips-hint">тап — записать · долгое нажатие — добавить</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Итого</div>
+                <div class="stat-row">
+                    <span>Всего поездок</span>
+                    <span><strong id="total-trips">0</strong></span>
+                </div>
+                <div class="stat-row">
+                    <span>Всего расходов</span>
+                    <span><strong id="total-expenses">0.00 BYN</strong></span>
+                </div>
+                <div class="stat-divider"></div>
+                <div id="transport-stats"></div>
+                <div class="stat-divider"></div>
+                <div class="stat-row">
+                    <span>Проездные</span>
+                    <span><strong id="total-pass-expenses">0.00 BYN</strong></span>
+                </div>
+                <div class="stat-row">
+                    <span>Разовые поездки</span>
+                    <span><strong id="total-trip-expenses">0.00 BYN</strong></span>
+                </div>
+            </div>
+        </div>
+
+        <div id="trip-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">Добавление поездки</div>
+                <div class="form-group">
+                    <label>Время</label>
+                    <input type="time" id="modal-time">
+                </div>
+                <div class="form-group">
+                    <label>Транспорт</label>
+                    <select id="modal-transport">
+                        <option value="ground">🚌 Наземный</option>
+                        <option value="metro">🚇 Метро</option>
+                        <option value="carsharing">🚗 Каршеринг</option>
+                        <option value="taxi">🚕 Такси</option>
+                        <option value="scooter">🛴 Самокат</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Цена (BYN)</label>
+                    <input type="number" id="modal-price" min="0" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Способ оплаты</label>
+                    <select id="modal-payment"></select>
+                </div>
+                <div class="modal-buttons">
+                    <button id="modal-cancel" class="btn-modal btn-modal-cancel">Отмена</button>
+                    <button id="modal-save" class="btn-modal btn-modal-save">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="app.js?v=10"></script>
+</body>
+</html>

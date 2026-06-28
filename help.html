@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Справка</title>
+    <link rel="manifest" href="manifest.json?v=10">
+    <link rel="stylesheet" href="style.css?v=10">
+    <style>
+        .help-card {
+            background: var(--card-bg);
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 14px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .help-card h3 {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            color: var(--blue);
+        }
+        .help-card p, .help-card li {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        .help-card ul {
+            padding-left: 20px;
+            margin-top: 6px;
+        }
+        .help-card li {
+            margin-bottom: 4px;
+        }
+        .help-start {
+            width: 100%;
+            padding: 14px;
+            background: var(--blue);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="screen active">
+            <div id="back-wrap">
+                <a href="index.html" class="back-link" style="display:inline-block;margin-bottom:16px;color:var(--blue);text-decoration:none;font-size:0.9rem">← Назад</a>
+            </div>
+            <h1>ℹ️ Справка</h1>
+
+            <div class="help-card">
+                <h3>Зачем это приложение?</h3>
+                <p>Дневник поездок на общественном транспорте. Записывайте каждую поездку — приложение покажет статистику и расходы.</p>
+            </div>
+
+            <div class="help-card">
+                <h3>Быстрое добавление</h3>
+                <ul>
+                    <li><strong>Тап</strong> по кнопке транспорта — мгновенная запись поездки с дефолтной ценой</li>
+                    <li>Если есть проездной — поездка засчитывается через проездной (без расхода)</li>
+                </ul>
+            </div>
+
+            <div class="help-card">
+                <h3>Ручное добавление</h3>
+                <ul>
+                    <li><strong>Долгое нажатие</strong> на кнопку транспорта — откроется форма добавления</li>
+                    <li>Можно выбрать: время, тип транспорта, цену, способ оплаты</li>
+                    <li>Доступны: 🚌 Наземный, 🚇 Метро, 🚗 Каршеринг, 🚕 Такси, 🛴 Самокат</li>
+                </ul>
+            </div>
+
+            <div class="help-card">
+                <h3>Журнал поездок</h3>
+                <ul>
+                    <li>На главном экране нажмите <strong>«Сегодня: N поездок ›»</strong></li>
+                    <li>Откроется полный журнал с подробностями каждой поездки</li>
+                    <li>Кнопка <strong>✖️</strong> отменяет последнюю сегодняшнюю поездку</li>
+                </ul>
+            </div>
+
+            <div class="help-card">
+                <h3>Проездные</h3>
+                <ul>
+                    <li>Меню <strong>«Проездной»</strong> — создание и управление</li>
+                    <li><strong>Безлимитный</strong> — 10, 15 или 30 суток</li>
+                    <li><strong>На N поездок</strong> — 120 или 365 суток</li>
+                    <li>Может покрывать наземный, метро или самокат</li>
+                    <li>Поездка через проездной — без расхода</li>
+                </ul>
+            </div>
+
+            <div class="help-card">
+                <h3>Настройки</h3>
+                <ul>
+                    <li><strong>Цены за поездку</strong> — наземный (предоплата/наличные), метро</li>
+                    <li><strong>Кнопки на главной</strong> — какие виды транспорта показывать</li>
+                    <li><strong>Сброс</strong> — удалить все поездки и проездные</li>
+                </ul>
+            </div>
+
+            <div class="help-card">
+                <h3>Расходы</h3>
+                <ul>
+                    <li><strong>Проездной</strong> — разовый расход при покупке</li>
+                    <li><strong>Разовая поездка</strong> — расход при оплате наличными/предоплатой</li>
+                    <li>Всего расходов — сумма на главном экране</li>
+                </ul>
+            </div>
+
+            <div class="help-card">
+                <h3>Особенности</h3>
+                <ul>
+                    <li>Данные хранятся локально на устройстве</li>
+                    <li>Работает офлайн (установите как PWA)</li>
+                    <li>Тёмная и светлая темы</li>
+                    <li>Модель данных совместима с реляционной БД</li>
+                </ul>
+            </div>
+
+            <button id="btn-start" class="help-start hidden">Приступить</button>
+        </div>
+    </div>
+    <script>
+        (function() {
+            const THEME_KEY = 'transit_theme';
+            const HELP_KEY = 'transit_help_seen';
+            const saved = localStorage.getItem(THEME_KEY) || 'light';
+            document.documentElement.setAttribute('data-theme', saved);
+
+            const btn = document.getElementById('btn-start');
+            const backWrap = document.getElementById('back-wrap');
+
+            if (!localStorage.getItem(HELP_KEY)) {
+                btn.classList.remove('hidden');
+                backWrap.classList.add('hidden');
+                btn.addEventListener('click', function() {
+                    localStorage.setItem(HELP_KEY, '1');
+                    window.location.href = 'index.html';
+                });
+            }
+
+            document.getElementById('btn-theme').addEventListener('click', function() {
+                const current = document.documentElement.getAttribute('data-theme');
+                const next = current === 'dark' ? 'light' : 'dark';
+                localStorage.setItem(THEME_KEY, next);
+                document.documentElement.setAttribute('data-theme', next);
+                this.textContent = next === 'dark' ? '☀️' : '🌙';
+            });
+        })();
+    </script>
+</body>
+</html>

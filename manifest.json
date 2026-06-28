@@ -1,0 +1,10 @@
+{
+    "name": "Проездной — Дневник поездок",
+    "short_name": "Проездной",
+    "description": "Дневник поездок на общественном транспорте и учёт расходов",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#f9fafb",
+    "theme_color": "#2563eb",
+    "orientation": "portrait"
+}
