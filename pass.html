@@ -27,16 +27,19 @@
             <div id="pass-active-card" class="card hidden">
                 <div id="pass-expired-banner" class="banner banner-warn hidden">Проездной истёк!</div>
                 <div id="pass-lost-banner" class="banner banner-lost hidden">Проездной потерян</div>
-                <div id="pass-info-text" class="pass-info-line"></div>
+                <div class="pass-header-row">
+                    <div id="pass-info-text" class="pass-info-line"></div>
+                    <button id="btn-pass-settings" class="btn-pass-settings hidden">⚙️</button>
+                </div>
                 <div class="progress-bar">
                     <div id="pass-progress-fill" class="progress-fill"></div>
                 </div>
                 <div id="pass-progress-text" class="pass-progress-text"></div>
                 <div id="pass-remaining" class="pass-remaining"></div>
-                <div class="pass-actions">
-                    <button id="btn-lose-pass" class="btn-pass-action btn-pass-lost hidden">Потерял</button>
-                    <button id="btn-restore-pass" class="btn-pass-action btn-pass-restore hidden">Восстановить</button>
-                    <button id="btn-delete-pass" class="btn-pass-action btn-pass-delete hidden">Удалить</button>
+                <div id="pass-settings-menu" class="pass-settings-menu hidden">
+                    <button id="btn-lose-pass" class="pass-settings-item pass-settings-lost">Потерян</button>
+                    <button id="btn-restore-pass" class="pass-settings-item pass-settings-restore hidden">Восстановить</button>
+                    <button id="btn-delete-pass" class="pass-settings-item pass-settings-delete">Удалить</button>
                 </div>
             </div>
 

@@ -98,6 +98,21 @@ h1 {
     padding: 4px;
 }
 
+.btn-header-settings {
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 2px 4px;
+    text-decoration: none;
+    opacity: 0.6;
+    transition: opacity 0.15s;
+}
+
+.btn-header-settings:hover {
+    opacity: 1;
+}
+
 .section-title {
     font-size: 0.8rem;
     font-weight: 600;
@@ -191,10 +206,67 @@ h1 {
     margin-bottom: 10px;
 }
 
-.pass-actions {
+.pass-header-row {
     display: flex;
-    justify-content: center;
-    gap: 8px;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.pass-header-row .pass-info-line {
+    text-align: left;
+    margin-bottom: 0;
+}
+
+.btn-pass-settings {
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 2px 4px;
+    opacity: 0.5;
+    transition: opacity 0.15s;
+}
+
+.btn-pass-settings:hover {
+    opacity: 1;
+}
+
+.pass-settings-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+}
+
+.pass-settings-item {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: none;
+    text-align: left;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.pass-settings-item:active {
+    background: var(--light-gray);
+}
+
+.pass-settings-lost {
+    color: var(--red);
+}
+
+.pass-settings-restore {
+    color: var(--green);
+}
+
+.pass-settings-delete {
+    color: var(--red);
 }
 
 .btn-pass-action {
@@ -232,12 +304,13 @@ h1 {
 
 .trips-buttons {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     margin-bottom: 8px;
 }
 
 .btn-trip-add {
-    flex: 1;
+    flex: 1 1 auto;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -440,13 +513,15 @@ h1 {
 .transport-buttons,
 .duration-buttons {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
 }
 
 .pass-type-btn,
 .transport-btn,
 .duration-btn {
-    flex: 1;
+    flex: 1 1 auto;
+    min-width: 0;
     padding: 10px 6px;
     border: 2px solid var(--border);
     border-radius: 10px;

@@ -144,6 +144,27 @@
         });
 
         document.getElementById('btn-create-pass').addEventListener('click', createPass);
+        document.getElementById('btn-pass-settings').addEventListener('click', toggleSettingsMenu);
+        document.getElementById('btn-lose-pass').addEventListener('click', () => {
+            if (confirm('Потерять проездной?')) {
+                const pass = getActivePass();
+                if (pass) { pass.status = 'lost'; saveData(db); render(); }
+            }
+        });
+        document.getElementById('btn-restore-pass').addEventListener('click', () => {
+            const lost = db.passes.find(p => p.status === 'lost');
+            if (lost) { lost.status = 'active'; saveData(db); render(); }
+        });
+        document.getElementById('btn-delete-pass').addEventListener('click', () => {
+            if (confirm('Удалить проездной?')) {
+                const target = getActivePass() || db.passes.find(p => p.status === 'lost') || db.passes.find(p => p.status === 'active' && today() > p.expires_at);
+                if (target) { deletePassById(target.id); render(); }
+            }
+        });
+    }
+
+    function toggleSettingsMenu() {
+        document.getElementById('pass-settings-menu').classList.toggle('hidden');
     }
 
     function updateFormState() {
@@ -245,9 +266,11 @@
             createSection.classList.add('hidden');
             document.getElementById('pass-expired-banner').classList.add('hidden');
             document.getElementById('pass-lost-banner').classList.add('hidden');
+            document.getElementById('btn-pass-settings').classList.remove('hidden');
             document.getElementById('btn-lose-pass').classList.remove('hidden');
             document.getElementById('btn-restore-pass').classList.add('hidden');
-            document.getElementById('btn-delete-pass').classList.add('hidden');
+            document.getElementById('btn-delete-pass').classList.remove('hidden');
+            document.getElementById('pass-settings-menu').classList.add('hidden');
 
             const transportNames = db.pass_transport
                 .filter(pt => pt.pass_id === pass.id)
@@ -273,19 +296,12 @@
                 document.getElementById('pass-progress-text').textContent = `${pass.used_trips} / ${pass.total_trips} поездок`;
                 document.getElementById('pass-remaining').textContent = `Осталось ${tripsLeft} поездок · ${daysLeft} дн.`;
             }
-
-            document.getElementById('btn-lose-pass').onclick = () => {
-                if (confirm('Потерять проездной?')) {
-                    pass.status = 'lost';
-                    saveData(db);
-                    render();
-                }
-            };
         } else if (lostPass) {
             card.classList.remove('hidden');
             createSection.classList.add('hidden');
             document.getElementById('pass-expired-banner').classList.add('hidden');
             document.getElementById('pass-lost-banner').classList.remove('hidden');
+            document.getElementById('btn-pass-settings').classList.remove('hidden');
             document.getElementById('pass-info-text').textContent = 'Проездной потерян';
             document.getElementById('pass-progress-fill').style.width = '0%';
             document.getElementById('pass-progress-text').textContent = '';
@@ -293,23 +309,13 @@
             document.getElementById('btn-lose-pass').classList.add('hidden');
             document.getElementById('btn-restore-pass').classList.remove('hidden');
             document.getElementById('btn-delete-pass').classList.remove('hidden');
-
-            document.getElementById('btn-restore-pass').onclick = () => {
-                lostPass.status = 'active';
-                saveData(db);
-                render();
-            };
-            document.getElementById('btn-delete-pass').onclick = () => {
-                if (confirm('Удалить проездной?')) {
-                    deletePassById(lostPass.id);
-                    render();
-                }
-            };
+            document.getElementById('pass-settings-menu').classList.add('hidden');
         } else if (expiredPass) {
             card.classList.remove('hidden');
             createSection.classList.add('hidden');
             document.getElementById('pass-expired-banner').classList.remove('hidden');
             document.getElementById('pass-lost-banner').classList.add('hidden');
+            document.getElementById('btn-pass-settings').classList.remove('hidden');
             document.getElementById('pass-info-text').textContent = 'Проездной истёк';
             document.getElementById('pass-progress-fill').style.width = '100%';
             document.getElementById('pass-progress-text').textContent = '';
@@ -317,13 +323,7 @@
             document.getElementById('btn-lose-pass').classList.add('hidden');
             document.getElementById('btn-restore-pass').classList.add('hidden');
             document.getElementById('btn-delete-pass').classList.remove('hidden');
-
-            document.getElementById('btn-delete-pass').onclick = () => {
-                if (confirm('Удалить проездной?')) {
-                    deletePassById(expiredPass.id);
-                    render();
-                }
-            };
+            document.getElementById('pass-settings-menu').classList.add('hidden');
         } else {
             card.classList.add('hidden');
             createSection.classList.remove('hidden');

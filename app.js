@@ -238,9 +238,17 @@
         }
     }
 
+    const PASS_TRANSPORTS = ['ground', 'metro', 'scooter'];
+    const POPUP_TRANSPORTS = ['carsharing', 'taxi', 'scooter'];
+
     function quickAddTrip(transport) {
         if (longPressTimer) {
             cancelLongPress();
+        }
+
+        if (POPUP_TRANSPORTS.includes(transport)) {
+            openModal(transport);
+            return;
         }
         const pass = getActivePass();
         const ts = now();
@@ -273,7 +281,6 @@
     function openModal(transport) {
         editingTrip = { transport };
         const pass = getActivePass();
-        const PASS_TRANSPORTS = ['ground', 'metro', 'scooter'];
         const hasPassForType = pass && PASS_TRANSPORTS.includes(transport) && passCoversTransport(pass, transport);
 
         els.modalTime.value = new Date().toTimeString().slice(0, 5);
