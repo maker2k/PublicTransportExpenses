@@ -119,6 +119,7 @@
                 btn.classList.add('selected');
                 selectedPassType = btn.dataset.type;
                 updateFormState();
+                updatePlan();
             });
         });
 
@@ -140,11 +141,15 @@
                 group.querySelectorAll('.duration-btn').forEach(b => b.classList.remove('selected'));
                 btn.classList.add('selected');
                 selectedDuration = parseInt(btn.dataset.days);
+                updatePlan();
             });
         });
 
         document.getElementById('btn-create-pass').addEventListener('click', createPass);
         document.getElementById('btn-pass-settings').addEventListener('click', toggleSettingsMenu);
+        document.getElementById('plan-header').addEventListener('click', () => {
+            document.getElementById('plan-dates').classList.toggle('hidden');
+        });
         document.getElementById('btn-lose-pass').addEventListener('click', () => {
             if (confirm('Потерять проездной?')) {
                 const pass = getActivePass();
@@ -251,6 +256,7 @@
     function render() {
         renderActivePass();
         renderHistory();
+        if (!getActivePass()) updatePlan();
     }
 
     function renderActivePass() {
@@ -367,6 +373,86 @@
                 <span style="font-size:0.8rem;color:var(--text-secondary)">${statusLabels[p.status] || p.status}</span>
             </div>`;
         }).join('<div class="stat-divider"></div>');
+    }
+
+    function getHolidays(year) {
+        const holidays = [
+            `${year}-01-01`, `${year}-01-02`, `${year}-01-03`,
+            `${year}-01-07`,
+            `${year}-03-08`,
+            `${year}-05-01`,
+            `${year}-05-09`,
+            `${year}-07-03`,
+            `${year}-11-02`,
+            `${year}-12-25`,
+        ];
+        return new Set(holidays);
+    }
+
+    function countUnprofitableDays(startDate, duration) {
+        const holidays = getHolidays(new Date(startDate).getFullYear());
+        let count = 0;
+        for (let i = 0; i < duration; i++) {
+            const d = new Date(startDate);
+            d.setDate(d.getDate() + i);
+            const dow = d.getDay();
+            const dateStr = d.getFullYear() + '-' +
+                String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                String(d.getDate()).padStart(2, '0');
+            if (dow === 0 || dow === 6 || holidays.has(dateStr)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    function findBestDates(duration) {
+        const results = [];
+        const todayDate = new Date();
+        const maxOffset = Math.min(duration, 14);
+        for (let offset = 0; offset <= maxOffset; offset++) {
+            const d = new Date(todayDate);
+            d.setDate(d.getDate() + offset);
+            const dateStr = d.getFullYear() + '-' +
+                String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                String(d.getDate()).padStart(2, '0');
+            const unprofitable = countUnprofitableDays(dateStr, duration);
+            results.push({ date: dateStr, unprofitable });
+        }
+        results.sort((a, b) => a.unprofitable - b.unprofitable || a.date.localeCompare(b.date));
+        const seen = new Set();
+        const unique = [];
+        for (const item of results) {
+            if (!seen.has(item.unprofitable)) {
+                seen.add(item.unprofitable);
+                unique.push(item);
+            }
+            if (unique.length >= 2) break;
+        }
+        return unique;
+    }
+
+    function updatePlan() {
+        const isUnlimited = selectedPassType === 'unlimited';
+        const durations = isUnlimited ? [10, 15, 30] : [120, 365];
+        const container = document.getElementById('plan-dates');
+        container.innerHTML = durations.map(dur => {
+            const isCurrent = dur === selectedDuration;
+            const dates = findBestDates(dur);
+            const rows = dates.map((item, i) => {
+                const label = i === 0 ? 'Лучше всего' : 'Хороший вариант';
+                const unprofitableWord = item.unprofitable === 1 ? 'выходной' : item.unprofitable < 5 ? 'выходных' : 'выходных';
+                return `<div class="plan-row">
+                    <span class="plan-label">${label}</span>
+                    <span class="plan-date">${formatDateShort(item.date)}</span>
+                    <span class="plan-count">${item.unprofitable} ${unprofitableWord} (праздн.)</span>
+                </div>`;
+            }).join('');
+            return `<div class="plan-section${isCurrent ? ' plan-current' : ''}">
+                <div class="plan-section-title">${dur} суток${isCurrent ? ' ★' : ''}</div>
+                ${rows}
+            </div>`;
+        }).join('');
     }
 
     init();
