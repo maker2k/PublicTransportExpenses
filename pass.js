@@ -76,15 +76,85 @@
         return d.toLocaleDateString('ru-RU', { day: 'numeric', month: '2-digit', year: 'numeric' });
     }
 
+    function formatMoney(amount) {
+        return amount.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' BYN';
+    }
+
+    function plural(n, one, few, many) {
+        const n10 = n % 10;
+        const n100 = n % 100;
+        if (n10 === 1 && n100 !== 11) return one;
+        if (n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14)) return few;
+        return many;
+    }
+
     function getActivePass() {
         const t = today();
         return db.passes.find(p =>
-            p.status === 'active' && t <= p.expires_at
+            p.status === 'active' && p.start_date <= t && t <= p.expires_at
         ) || null;
+    }
+
+    function latestPass(predicate) {
+        return db.passes
+            .filter(predicate)
+            .sort((a, b) => b.id - a.id)[0] || null;
+    }
+
+    function passHasTripsLeft(pass) {
+        return pass.type === 'unlimited' || pass.used_trips < pass.total_trips;
     }
 
     function passCoversTransport(pass, transport) {
         return db.pass_transport.some(pt => pt.pass_id === pass.id && pt.transport === transport);
+    }
+
+    function unitPrice(transport) {
+        const prices = db.prices || emptyDB().prices;
+        if (transport === 'ground') return prices.ground?.prepaid ?? 1.10;
+        if (transport === 'metro') return prices.metro?.fixed ?? 1.15;
+        return 0;
+    }
+
+    function passStats(pass) {
+        const trips = db.trips.filter(t => t.pass_id === pass.id);
+        const count = trips.length;
+        const single = trips.reduce((s, t) => s + unitPrice(t.transport), 0);
+        return {
+            count,
+            perTrip: count ? pass.price / count : null,
+            savings: single - pass.price
+        };
+    }
+
+    function passStatsHtml(pass) {
+        const stats = passStats(pass);
+        if (!stats.count) {
+            return '<div class="pass-history-stats"><span>Поездок по проездному не было</span></div>';
+        }
+
+        const tripsPart = `${stats.count} ${plural(stats.count, 'поездка', 'поездки', 'поездок')} · ${formatMoney(stats.perTrip)} за поездку`;
+        const savingsClass = stats.savings >= 0 ? 'saving-good' : 'saving-bad';
+        const savingsLabel = stats.savings >= 0 ? 'выгода' : 'переплата';
+
+        return `<div class="pass-history-stats">
+            <span>${tripsPart}</span>
+            <span class="${savingsClass}">${savingsLabel} ${formatMoney(Math.abs(stats.savings))}</span>
+        </div>`;
+    }
+
+    function renderPassStatsLine(pass) {
+        const el = document.getElementById('pass-trips-stats');
+        const stats = passStats(pass);
+        if (!stats.count) {
+            el.textContent = 'Поездок по проездному пока нет';
+        } else {
+            const tripsPart = `${stats.count} ${plural(stats.count, 'поездка', 'поездки', 'поездок')} · ${formatMoney(stats.perTrip)} за поездку`;
+            const savingsPart = stats.savings >= 0
+                ? `выгода ${formatMoney(stats.savings)}`
+                : `переплата ${formatMoney(-stats.savings)}`;
+            el.textContent = `${tripsPart} · ${savingsPart}`;
+        }
     }
 
     function init() {
@@ -261,8 +331,9 @@
 
     function renderActivePass() {
         const pass = getActivePass();
-        const lostPass = db.passes.find(p => p.status === 'lost');
-        const expiredPass = db.passes.find(p => p.status === 'active' && today() > p.expires_at);
+        const lostPass = latestPass(p => p.status === 'lost');
+        const expiredPass = latestPass(p => p.status === 'active' && today() > p.expires_at);
+        const showLost = lostPass && (!expiredPass || lostPass.id > expiredPass.id);
 
         const card = document.getElementById('pass-active-card');
         const createSection = document.getElementById('pass-create-section');
@@ -302,9 +373,9 @@
                 document.getElementById('pass-progress-text').textContent = `${pass.used_trips} / ${pass.total_trips} поездок`;
                 document.getElementById('pass-remaining').textContent = `Осталось ${tripsLeft} поездок · ${daysLeft} дн.`;
             }
-        } else if (lostPass) {
+            renderPassStatsLine(pass);
+        } else if (showLost) {
             card.classList.remove('hidden');
-            createSection.classList.add('hidden');
             document.getElementById('pass-expired-banner').classList.add('hidden');
             document.getElementById('pass-lost-banner').classList.remove('hidden');
             document.getElementById('btn-pass-settings').classList.remove('hidden');
@@ -316,9 +387,9 @@
             document.getElementById('btn-restore-pass').classList.remove('hidden');
             document.getElementById('btn-delete-pass').classList.remove('hidden');
             document.getElementById('pass-settings-menu').classList.add('hidden');
+            renderPassStatsLine(lostPass);
         } else if (expiredPass) {
             card.classList.remove('hidden');
-            createSection.classList.add('hidden');
             document.getElementById('pass-expired-banner').classList.remove('hidden');
             document.getElementById('pass-lost-banner').classList.add('hidden');
             document.getElementById('btn-pass-settings').classList.remove('hidden');
@@ -330,6 +401,7 @@
             document.getElementById('btn-restore-pass').classList.add('hidden');
             document.getElementById('btn-delete-pass').classList.remove('hidden');
             document.getElementById('pass-settings-menu').classList.add('hidden');
+            renderPassStatsLine(expiredPass);
         } else {
             card.classList.add('hidden');
             createSection.classList.remove('hidden');
@@ -361,18 +433,22 @@
                 .map(pt => TRANSPORT_LABELS[pt.transport] || pt.transport)
                 .join(' + ');
 
+            const status = p.status === 'active' && today() > p.expires_at ? 'expired' : p.status;
             const statusLabels = { active: 'Действует', lost: 'Потерян', expired: 'Истёк' };
             const typeLabel = p.type === 'unlimited' ? 'Безлимитный' : `На ${p.total_trips} поездок`;
 
-            return `<div class="stat-row">
-                <span>${typeLabel} · ${transportNames}</span>
-                <span>${p.price.toLocaleString('ru-RU')} BYN</span>
-            </div>
-            <div class="stat-row">
-                <span style="font-size:0.8rem;color:var(--text-secondary)">${formatDateShort(p.start_date)} — ${formatDateShort(p.expires_at)}</span>
-                <span style="font-size:0.8rem;color:var(--text-secondary)">${statusLabels[p.status] || p.status}</span>
+            return `<div class="pass-history-item">
+                <div class="stat-row">
+                    <span>${typeLabel} · ${transportNames}</span>
+                    <span>${formatMoney(p.price)}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="pass-history-dates">${formatDateShort(p.start_date)} — ${formatDateShort(p.expires_at)}</span>
+                    <span class="pass-history-status">${statusLabels[status] || status}</span>
+                </div>
+                ${passStatsHtml(p)}
             </div>`;
-        }).join('<div class="stat-divider"></div>');
+        }).join('');
     }
 
     function getHolidays(year) {

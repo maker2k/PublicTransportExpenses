@@ -10,9 +10,9 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <link rel="manifest" href="manifest.json?v=10">
+    <link rel="manifest" href="manifest.json?v=12">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎫</text></svg>">
-    <link rel="stylesheet" href="style.css?v=10">
+    <link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
     <div id="app">
@@ -36,11 +36,12 @@
                 </div>
                 <div id="pass-progress-text" class="pass-progress-text"></div>
                 <div id="pass-remaining" class="pass-remaining"></div>
+                <div id="pass-stats-line" class="pass-stats-line"></div>
             </div>
 
             <div class="card">
                 <a href="journal.html" class="today-link">
-                    <span>Сегодня: <strong id="today-trips">0</strong> поездок</span>
+                    <span>Сегодня: <strong id="today-trips">0</strong> <span id="today-trips-word">поездок</span></span>
                     <span class="today-expenses-wrap"><strong id="today-expenses">0.00 BYN</strong> ›</span>
                 </a>
                 <div id="trips-buttons" class="trips-buttons"></div>
@@ -48,7 +49,13 @@
             </div>
 
             <div class="card">
-                <div class="card-title">Итого</div>
+                <div class="card-title" id="stats-title">Итого</div>
+                <div id="stats-period" class="period-switch">
+                    <button class="period-btn" data-period="day">Сегодня</button>
+                    <button class="period-btn" data-period="week">7 дней</button>
+                    <button class="period-btn" data-period="month">30 дней</button>
+                    <button class="period-btn" data-period="all">Всё время</button>
+                </div>
                 <div class="stat-row">
                     <span>Всего поездок</span>
                     <span><strong id="total-trips">0</strong></span>
@@ -103,6 +110,6 @@
             </div>
         </div>
     </div>
-    <script src="app.js?v=10"></script>
+    <script src="app.js?v=12"></script>
 </body>
 </html>

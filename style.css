@@ -139,6 +139,42 @@ h1 {
     margin-bottom: 10px;
 }
 
+.period-switch {
+    display: flex;
+    gap: 4px;
+    background: var(--light-gray);
+    border-radius: 10px;
+    padding: 3px;
+    margin-bottom: 12px;
+}
+
+.period-btn {
+    flex: 1 1 0;
+    border: none;
+    background: none;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 500;
+    padding: 7px 2px;
+    border-radius: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+}
+
+.period-btn.selected {
+    background: var(--card-bg);
+    color: var(--blue);
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
+
+.stat-empty {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
 .banner {
     padding: 10px 14px;
     border-radius: 10px;
@@ -204,6 +240,56 @@ h1 {
     font-size: 0.8rem;
     color: var(--text-secondary);
     margin-bottom: 10px;
+}
+
+.pass-stats-line {
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin-bottom: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+}
+
+.pass-history-item {
+    padding: 12px 0;
+    border-top: 1px solid var(--border);
+}
+
+.pass-history-item:first-child {
+    padding-top: 0;
+    border-top: none;
+}
+
+.pass-history-item:last-child {
+    padding-bottom: 0;
+}
+
+.pass-history-dates,
+.pass-history-status {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.pass-history-stats {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    padding-top: 6px;
+}
+
+.saving-good {
+    color: var(--green);
+    font-weight: 600;
+}
+
+.saving-bad {
+    color: var(--red);
+    font-weight: 600;
 }
 
 .pass-header-row {
@@ -354,6 +440,40 @@ h1 {
     display: flex;
     flex-direction: column;
     gap: 2px;
+}
+
+.journal-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    padding: 0 2px 10px;
+    flex-wrap: wrap;
+}
+
+.journal-summary strong {
+    color: var(--text);
+}
+
+.journal-summary-pass {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+
+.journal-day-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    padding: 12px 0 4px;
+    border-bottom: 1px solid var(--border);
+}
+
+.journal-day-title:first-child {
+    padding-top: 0;
 }
 
 .journal-row {

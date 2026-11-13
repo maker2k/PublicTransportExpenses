@@ -1,7 +1,15 @@
 (function() {
     const STORAGE_KEY = 'transit_diary';
     const THEME_KEY = 'transit_theme';
+    const STATS_PERIOD_KEY = 'transit_stats_period';
     const OLD_KEYS = ['transit_pass', 'transit_pass_defaults'];
+
+    const PERIODS = {
+        day: { title: 'Итого за сегодня', days: 0 },
+        week: { title: 'Итого за 7 дней', days: 6 },
+        month: { title: 'Итого за 30 дней', days: 29 },
+        all: { title: 'Итого за всё время', days: null }
+    };
 
     const PRICES = {
         ground: { prepaid: 1.10, cash: 1.15 },
@@ -22,6 +30,7 @@
     let db = loadData();
     let longPressTimer = null;
     let editingTrip = null;
+    let statsPeriod = loadStatsPeriod();
 
     const els = {};
 
@@ -85,21 +94,39 @@
         localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
     }
 
-    function today() {
-        const d = new Date();
+    function loadStatsPeriod() {
+        const saved = localStorage.getItem(STATS_PERIOD_KEY);
+        return PERIODS[saved] ? saved : 'all';
+    }
+
+    function ymd(d) {
         return d.getFullYear() + '-' +
             String(d.getMonth() + 1).padStart(2, '0') + '-' +
             String(d.getDate()).padStart(2, '0');
     }
 
+    function today() {
+        return ymd(new Date());
+    }
+
     function now() {
         const d = new Date();
-        return d.getFullYear() + '-' +
-            String(d.getMonth() + 1).padStart(2, '0') + '-' +
-            String(d.getDate()).padStart(2, '0') + 'T' +
+        return ymd(d) + 'T' +
             String(d.getHours()).padStart(2, '0') + ':' +
             String(d.getMinutes()).padStart(2, '0') + ':' +
             String(d.getSeconds()).padStart(2, '0');
+    }
+
+    function periodStart(period) {
+        const days = PERIODS[period]?.days;
+        if (days === null || days === undefined) return null;
+        const d = new Date();
+        d.setDate(d.getDate() - days);
+        return ymd(d);
+    }
+
+    function inPeriod(ts, start) {
+        return !start || ts.slice(0, 10) >= start;
     }
 
     function addDays(dateStr, days) {
@@ -128,12 +155,61 @@
     function getActivePass() {
         const t = today();
         return db.passes.find(p =>
-            p.status === 'active' && t <= p.expires_at
+            p.status === 'active' && p.start_date <= t && t <= p.expires_at
         ) || null;
+    }
+
+    function latestPass(predicate) {
+        return db.passes
+            .filter(predicate)
+            .sort((a, b) => b.id - a.id)[0] || null;
+    }
+
+    function passHasTripsLeft(pass) {
+        return pass.type === 'unlimited' || pass.used_trips < pass.total_trips;
     }
 
     function passCoversTransport(pass, transport) {
         return db.pass_transport.some(pt => pt.pass_id === pass.id && pt.transport === transport);
+    }
+
+    function unitPrice(transport) {
+        const prices = db.prices || PRICES;
+        if (transport === 'ground') return prices.ground?.prepaid ?? PRICES.ground.prepaid;
+        if (transport === 'metro') return prices.metro?.fixed ?? PRICES.metro.fixed;
+        return 0;
+    }
+
+    function passStats(pass) {
+        const trips = db.trips.filter(t => t.pass_id === pass.id);
+        const count = trips.length;
+        const single = trips.reduce((s, t) => s + unitPrice(t.transport), 0);
+        return {
+            count,
+            perTrip: count ? pass.price / count : null,
+            savings: single - pass.price
+        };
+    }
+
+    function plural(n, one, few, many) {
+        const n10 = n % 10;
+        const n100 = n % 100;
+        if (n10 === 1 && n100 !== 11) return one;
+        if (n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14)) return few;
+        return many;
+    }
+
+    function setPassStatsLine(pass) {
+        const stats = passStats(pass);
+        if (!stats.count) {
+            els.passStatsLine.textContent = 'Поездок по проездному не было';
+        } else {
+            const tripsPart = `${stats.count} ${plural(stats.count, 'поездка', 'поездки', 'поездок')} · ${formatMoney(stats.perTrip)} за поездку`;
+            const savingsPart = stats.savings >= 0
+                ? `выгода ${formatMoney(stats.savings)}`
+                : `переплата ${formatMoney(-stats.savings)}`;
+            els.passStatsLine.textContent = `${tripsPart} · ${savingsPart}`;
+        }
     }
 
     function init() {
@@ -149,11 +225,15 @@
         els.passProgressFill = document.getElementById('pass-progress-fill');
         els.passProgressText = document.getElementById('pass-progress-text');
         els.passRemaining = document.getElementById('pass-remaining');
+        els.passStatsLine = document.getElementById('pass-stats-line');
         els.passExpiredBanner = document.getElementById('pass-expired-banner');
         els.passLostBanner = document.getElementById('pass-lost-banner');
         els.tripsButtons = document.getElementById('trips-buttons');
         els.todayTrips = document.getElementById('today-trips');
+        els.todayTripsWord = document.getElementById('today-trips-word');
         els.todayExpenses = document.getElementById('today-expenses');
+        els.statsTitle = document.getElementById('stats-title');
+        els.statsPeriod = document.getElementById('stats-period');
         els.totalTrips = document.getElementById('total-trips');
         els.totalExpenses = document.getElementById('total-expenses');
         els.transportStats = document.getElementById('transport-stats');
@@ -193,6 +273,14 @@
             if (btn && !btn.disabled) {
                 quickAddTrip(btn.dataset.transport);
             }
+        });
+
+        els.statsPeriod.addEventListener('click', (e) => {
+            const btn = e.target.closest('.period-btn');
+            if (!btn) return;
+            statsPeriod = btn.dataset.period;
+            localStorage.setItem(STATS_PERIOD_KEY, statsPeriod);
+            renderTotals();
         });
 
         els.tripsButtons.addEventListener('mousedown', (e) => {
@@ -253,7 +341,7 @@
         const pass = getActivePass();
         const ts = now();
 
-        if (pass && passCoversTransport(pass, transport)) {
+        if (pass && passHasTripsLeft(pass) && passCoversTransport(pass, transport)) {
             const trip = { id: Date.now(), ts, transport, pass_id: pass.id };
             db.trips.push(trip);
             if (pass.type === 'fixed') {
@@ -281,7 +369,7 @@
     function openModal(transport) {
         editingTrip = { transport };
         const pass = getActivePass();
-        const hasPassForType = pass && PASS_TRANSPORTS.includes(transport) && passCoversTransport(pass, transport);
+        const hasPassForType = pass && passHasTripsLeft(pass) && PASS_TRANSPORTS.includes(transport) && passCoversTransport(pass, transport);
 
         els.modalTime.value = new Date().toTimeString().slice(0, 5);
         els.modalTransport.value = transport;
@@ -317,7 +405,7 @@
 
         const pass = getActivePass();
 
-        if (payment === 'pass' && pass && passCoversTransport(pass, transport)) {
+        if (payment === 'pass' && pass && passHasTripsLeft(pass) && passCoversTransport(pass, transport)) {
             const trip = { id: Date.now(), ts, transport, pass_id: pass.id };
             db.trips.push(trip);
             if (pass.type === 'fixed') {
@@ -367,8 +455,9 @@
 
     function renderPassCard() {
         const pass = getActivePass();
-        const lostPass = db.passes.find(p => p.status === 'lost');
-        const expiredPass = db.passes.find(p => p.status === 'active' && today() > p.expires_at);
+        const lostPass = latestPass(p => p.status === 'lost');
+        const expiredPass = latestPass(p => p.status === 'active' && today() > p.expires_at);
+        const showLost = lostPass && (!expiredPass || lostPass.id > expiredPass.id);
 
         els.passCard.classList.toggle('hidden', !pass && !lostPass && !expiredPass);
 
@@ -400,13 +489,15 @@
                 els.passProgressText.textContent = `${pass.used_trips} / ${pass.total_trips} поездок`;
                 els.passRemaining.textContent = `Осталось ${tripsLeft} поездок · ${daysLeft} дн.`;
             }
-        } else if (lostPass) {
+            setPassStatsLine(pass);
+        } else if (showLost) {
             els.passExpiredBanner.classList.add('hidden');
             els.passLostBanner.classList.remove('hidden');
             els.passInfoText.textContent = '';
             els.passProgressFill.style.width = '0%';
             els.passProgressText.textContent = '';
             els.passRemaining.textContent = '';
+            setPassStatsLine(lostPass);
         } else if (expiredPass) {
             els.passExpiredBanner.classList.remove('hidden');
             els.passLostBanner.classList.add('hidden');
@@ -414,6 +505,7 @@
             els.passProgressFill.style.width = '100%';
             els.passProgressText.textContent = '';
             els.passRemaining.textContent = '';
+            setPassStatsLine(expiredPass);
         }
     }
 
@@ -423,28 +515,41 @@
         const todayExpenses = db.expenses.filter(ex => ex.ts.startsWith(t));
 
         els.todayTrips.textContent = todayTrips.length;
+        els.todayTripsWord.textContent = plural(todayTrips.length, 'поездка', 'поездки', 'поездок');
         const totalExp = todayExpenses.reduce((s, e) => s + e.price, 0);
         els.todayExpenses.textContent = formatMoney(totalExp);
     }
 
     function renderTotals() {
-        const totalTrips = db.trips.length;
-        const totalExpenses = db.expenses.reduce((s, e) => s + e.price, 0);
+        const start = periodStart(statsPeriod);
+        const trips = db.trips.filter(t => inPeriod(t.ts, start));
+        const expenses = db.expenses.filter(e => inPeriod(e.ts, start));
+
+        const totalTrips = trips.length;
+        const totalExpenses = expenses.reduce((s, e) => s + e.price, 0);
 
         const transportCounts = {};
-        db.trips.forEach(t => {
+        trips.forEach(t => {
             transportCounts[t.transport] = (transportCounts[t.transport] || 0) + 1;
         });
 
-        els.transportStats.innerHTML = Object.keys(TRANSPORT_LABELS)
+        els.statsTitle.textContent = PERIODS[statsPeriod].title;
+        els.statsPeriod.querySelectorAll('.period-btn').forEach(btn => {
+            btn.classList.toggle('selected', btn.dataset.period === statsPeriod);
+        });
+
+        const transportRows = Object.keys(TRANSPORT_LABELS)
             .filter(t => transportCounts[t])
             .map(t => `<div class="stat-row">
                 <span>${TRANSPORT_LABELS[t]}</span>
                 <span><strong>${transportCounts[t]}</strong></span>
             </div>`).join('');
 
-        const passExpenses = db.expenses.filter(e => e.type === 'pass').reduce((s, e) => s + e.price, 0);
-        const tripExpenses = db.expenses.filter(e => e.type === 'trip').reduce((s, e) => s + e.price, 0);
+        els.transportStats.innerHTML = transportRows ||
+            '<div class="stat-row stat-empty"><span>Поездок за период нет</span></div>';
+
+        const passExpenses = expenses.filter(e => e.type === 'pass').reduce((s, e) => s + e.price, 0);
+        const tripExpenses = expenses.filter(e => e.type === 'trip').reduce((s, e) => s + e.price, 0);
 
         els.totalTrips.textContent = totalTrips;
         els.totalExpenses.textContent = formatMoney(totalExpenses);
