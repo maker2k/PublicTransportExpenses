@@ -68,17 +68,39 @@ h1 {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
     margin-bottom: 16px;
 }
 
 .header-buttons {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
     gap: 8px;
+    margin-left: auto;
 }
 
 .header h1 {
     margin-bottom: 0;
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-size: clamp(1.15rem, 5.2vw, 1.4rem);
+}
+
+@media (max-width: 400px) {
+    .header {
+        gap: 4px 8px;
+    }
+
+    .header-buttons {
+        gap: 6px;
+    }
+
+    .btn-link {
+        font-size: 0.8rem;
+    }
 }
 
 .btn-link {
