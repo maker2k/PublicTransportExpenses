@@ -130,7 +130,8 @@
     }
 
     function addDays(dateStr, days) {
-        const d = new Date(dateStr);
+        const [y, m, day] = dateStr.split('-').map(Number);
+        const d = new Date(y, m - 1, day);
         d.setDate(d.getDate() + days);
         return d.getFullYear() + '-' +
             String(d.getMonth() + 1).padStart(2, '0') + '-' +
@@ -155,8 +156,13 @@
     function getActivePass() {
         const t = today();
         return db.passes.find(p =>
-            p.status === 'active' && p.start_date <= t && t <= p.expires_at
+            p.status === 'active' && p.start_date <= t && t < p.expires_at
         ) || null;
+    }
+
+    // expires_at — граница действия (день, когда проездной уже не действует)
+    function isPassExpired(pass) {
+        return today() >= pass.expires_at;
     }
 
     function latestPass(predicate) {
@@ -456,7 +462,7 @@
     function renderPassCard() {
         const pass = getActivePass();
         const lostPass = latestPass(p => p.status === 'lost');
-        const expiredPass = latestPass(p => p.status === 'active' && today() > p.expires_at);
+        const expiredPass = latestPass(p => p.status === 'active' && isPassExpired(p));
         const showLost = lostPass && (!expiredPass || lostPass.id > expiredPass.id);
 
         els.passCard.classList.toggle('hidden', !pass && !lostPass && !expiredPass);

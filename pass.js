@@ -58,7 +58,8 @@
     }
 
     function addDays(dateStr, days) {
-        const d = new Date(dateStr);
+        const [y, m, day] = dateStr.split('-').map(Number);
+        const d = new Date(y, m - 1, day);
         d.setDate(d.getDate() + days);
         return d.getFullYear() + '-' +
             String(d.getMonth() + 1).padStart(2, '0') + '-' +
@@ -91,8 +92,17 @@
     function getActivePass() {
         const t = today();
         return db.passes.find(p =>
-            p.status === 'active' && p.start_date <= t && t <= p.expires_at
+            p.status === 'active' && p.start_date <= t && t < p.expires_at
         ) || null;
+    }
+
+    // expires_at — граница действия (день, когда проездной уже не действует)
+    function isPassExpired(pass) {
+        return today() >= pass.expires_at;
+    }
+
+    function passLastDay(pass) {
+        return addDays(pass.expires_at, -1);
     }
 
     function latestPass(predicate) {
@@ -232,7 +242,7 @@
         });
         document.getElementById('btn-delete-pass').addEventListener('click', () => {
             if (confirm('Удалить проездной?')) {
-                const target = getActivePass() || db.passes.find(p => p.status === 'lost') || db.passes.find(p => p.status === 'active' && today() > p.expires_at);
+                const target = getActivePass() || db.passes.find(p => p.status === 'lost') || db.passes.find(p => p.status === 'active' && isPassExpired(p));
                 if (target) { deletePassById(target.id); render(); }
             }
         });
@@ -332,7 +342,7 @@
     function renderActivePass() {
         const pass = getActivePass();
         const lostPass = latestPass(p => p.status === 'lost');
-        const expiredPass = latestPass(p => p.status === 'active' && today() > p.expires_at);
+        const expiredPass = latestPass(p => p.status === 'active' && isPassExpired(p));
         const showLost = lostPass && (!expiredPass || lostPass.id > expiredPass.id);
 
         const card = document.getElementById('pass-active-card');
@@ -433,7 +443,7 @@
                 .map(pt => TRANSPORT_LABELS[pt.transport] || pt.transport)
                 .join(' + ');
 
-            const status = p.status === 'active' && today() > p.expires_at ? 'expired' : p.status;
+            const status = p.status === 'active' && isPassExpired(p) ? 'expired' : p.status;
             const statusLabels = { active: 'Действует', lost: 'Потерян', expired: 'Истёк' };
             const typeLabel = p.type === 'unlimited' ? 'Безлимитный' : `На ${p.total_trips} поездок`;
 
@@ -443,7 +453,7 @@
                     <span>${formatMoney(p.price)}</span>
                 </div>
                 <div class="stat-row">
-                    <span class="pass-history-dates">${formatDateShort(p.start_date)} — ${formatDateShort(p.expires_at)}</span>
+                    <span class="pass-history-dates">${formatDateShort(p.start_date)} — ${formatDateShort(passLastDay(p))}</span>
                     <span class="pass-history-status">${statusLabels[status] || status}</span>
                 </div>
                 ${passStatsHtml(p)}

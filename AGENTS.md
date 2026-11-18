@@ -40,6 +40,7 @@ ticket/
 ```
 - `status`: "active" | "expired" | "lost"
 - `type`: "unlimited" (по дням) | "fixed" (на N поездок)
+- `expires_at` = `start_date + duration` — граница действия: последний действующий день это `expires_at - 1`, в сам `expires_at` проездной уже истёк (в коде: `start_date <= today < expires_at`)
 
 ### pass_transport — связь проездной ↔ транспорт (junction)
 ```json
